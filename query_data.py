@@ -14,13 +14,19 @@ load_dotenv()
 CHROMA_PATH = "chroma"
 
 PROMPT_TEMPLATE = """
-Answer the question based only on the following context:
+Please provide a detailed and thorough answer to the following question, using only the information contained in the provided context. 
+
+Do not include any external knowledge or generalizations; rely solely on the content from the documents. Make sure to use specific medical terminology, explanations, and examples where applicable to ensure the response is suitable for a medical exam context.
+
+Context:
 
 {context}
 
 ---
 
-Answer the question based on the above context: {question}
+Question: {question}
+
+Please ensure that your answer is complete and fully addresses the question using only the information from the context provided.
 """
 
 API_KEY = os.getenv("OPENAI_API_KEY")
@@ -48,7 +54,7 @@ def query_rag(query_text: str):
     )
 
     # Search the DB.
-    results = db.similarity_search_with_score(query_text, k=5)
+    results = db.similarity_search_with_score(query_text, k=30)
 
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)

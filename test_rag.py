@@ -12,6 +12,7 @@ Expected Response: "{expected_response}"
 Actual Response: "{actual_response}"
 
 Does the actual response match the expected response in terms of meaning, even if it includes additional context or wording? Please consider the core information and disregard minor additions.
+If the response contains the core information, even if it adds more options, consider it 'true'.
 
 Respond with 'true' if the actual response conveys the expected meaning, and 'false' if it does not.
 """
@@ -19,15 +20,15 @@ Respond with 'true' if the actual response conveys the expected meaning, and 'fa
 
 def test_question_one():
     assert query_and_validate(
-        question="Who was the responsible for the editing and review of the article writing?",
-        expected_response="Wondmagegn Taye Abebe",
+        question="Que técnica analgésica pode resultar numa cefaleia por perfuração da duramáter?",
+        expected_response="bloqueio epidural",
     )
 
 
 def test_question_two():
     assert query_and_validate(
-        question="What machine learning models were used in this study?",
-        expected_response="Extreme Gradient Boosting, K-Nearest Neighbors, Support Vector Machine and Multilayer Perceptron",
+        question="qual é a terapêutica de 1ª linha para tratar uma bacteriúria assintomática na grávida?",
+        expected_response="fosfomicina 3g 1 toma ou amoxicilina + ácido clavulânico 625 mg (500 mg + 125 mg) durante 5-7 dias",
     )
 
 

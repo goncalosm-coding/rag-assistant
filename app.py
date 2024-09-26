@@ -64,7 +64,7 @@ if prompt := st.chat_input("Ask a question based on the medical research documen
 # Sidebar for audio recording and clear chat history
 with st.sidebar:  # Single sidebar for both functionalities
     if st.button("Record Audio Query"):
-        audio_file = record_audio(duration=5)  # Record audio for 5 seconds
+        audio_file = record_audio()  # Record audio for 5 seconds
         transcribed_text = speech_to_text_whisper(audio_file)  # Transcribe audio to text
 
         # Append the transcribed text as a user prompt

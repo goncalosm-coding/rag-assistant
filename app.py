@@ -15,12 +15,16 @@ load_dotenv()
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# Function to load users and their messages from a single JSON file
-def load_user_data(filename):
-    if os.path.exists(filename):
-        with open(filename, 'r') as file:
+def load_user_data(file_path):
+    if not os.path.exists(file_path) or os.stat(file_path).st_size == 0:
+        return {}  # Return empty dictionary if the file doesn't exist or is empty
+
+    with open(file_path, "r") as file:
+        try:
             return json.load(file)
-    return {}
+        except json.JSONDecodeError:
+            # If the file is not a valid JSON, return an empty dictionary
+            return {}
 
 # Function to save users and their messages to a single JSON file
 def save_user_data(users, filename):

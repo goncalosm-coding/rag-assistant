@@ -33,6 +33,24 @@ def clear_user_messages(username, users):
         users[username]['messages'] = []  # Clear messages for the user
     return users
 
+# Function to forward messages with a watermark and icon
+def forward_message(user_prompt, assistant_response, recipient, users, sender):
+    if recipient in users:
+        if users[recipient].get("receive_forwarded_messages", True):  # Check preference
+            users[recipient]["messages"].append({
+                "role": "user",
+                "content": f"🔄 [Forwarded from {sender}]: {user_prompt}"  # Icon added
+            })
+            users[recipient]["messages"].append({
+                "role": "assistant",
+                "content": f"🔄 [Forwarded from {sender}]: {assistant_response}"  # Icon added
+            })
+            save_user_data(users, "users_data.json")
+            return True
+        else:
+            return False  # User opted out of receiving forwarded messages
+    return False
+
 # Define the Streamlit interface
 st.title(":violet[Hermingarda] - Your PNA Assistant")
 
@@ -79,7 +97,11 @@ if not st.session_state.logged_in:
             if register_username in users:
                 st.error("Username already exists.")
             else:
-                users[register_username] = {"password": hash_password(register_password), "messages": []}
+                users[register_username] = {
+                    "password": hash_password(register_password), 
+                    "messages": [],
+                    "receive_forwarded_messages": True  # Default preference
+                }
                 save_user_data(users, users_file)
                 st.success("Registration successful! You can now log in.")
 
@@ -91,12 +113,14 @@ if st.session_state.logged_in:
     if "messages" not in st.session_state:
         st.session_state.messages = users[username].get("messages", [])
 
-    for message in st.session_state.messages:
+    for idx, message in enumerate(st.session_state.messages):  # Use index for unique keys
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Input text box for the query
-    if prompt := st.chat_input("Ask a question based on the medical research documents..."):
+    # Input text box for the query (main area)
+    prompt = st.chat_input("Ask a question based on the medical research documents...")
+
+    if prompt:
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
@@ -112,8 +136,31 @@ if st.session_state.logged_in:
         users[username]["messages"] = st.session_state.messages
         save_user_data(users, users_file)
 
-    # Sidebar for audio recording and clear chat history
+    # Sidebar for functionalities
     with st.sidebar:
+        # User preferences
+        st.subheader("User Preferences")
+        receive_forwarded = st.checkbox("Receive Messages", 
+                                          value=users[username].get("receive_forwarded_messages"))
+        users[username]["receive_forwarded_messages"] = receive_forwarded
+        save_user_data(users, users_file)  # Save preferences immediately
+
+        # Add a separator line
+        st.markdown("---")  # Horizontal line for separation
+
+        # Show forward option if there are messages
+        if len(st.session_state.messages) >= 2:
+            last_user_message = st.session_state.messages[-2]["content"]
+            last_assistant_message = st.session_state.messages[-1]["content"]
+
+            recipient = st.selectbox("Forward to:", options=list(users.keys()), key="forward_recipient")
+            if st.button("Forward", key="forward_button"):  # Unique key
+                if forward_message(last_user_message, last_assistant_message, recipient, users, username):
+                    st.success(f"Message forwarded to {recipient}!")
+                else:
+                    st.warning(f"{recipient} has opted out of receiving forwarded messages.")
+
+        # Audio recording option
         if st.button("Record Audio Query"):
             audio_file = record_audio()  # Record audio for 5 seconds
             transcribed_text = speech_to_text_whisper(audio_file)
@@ -135,12 +182,13 @@ if st.session_state.logged_in:
             st.success("Chat history cleared!")
             st.rerun()
 
-    # Optional: Add a logout button
-    if st.sidebar.button("Logout"):
-        st.session_state.logged_in = False
-        st.session_state.username = ""
-        st.session_state.messages = []
-        st.rerun()
+        # Ensure logout button stays at the bottom
+        st.markdown("---")  # Another separator line
+        if st.button("Logout"):
+            st.session_state.logged_in = False
+            st.session_state.username = ""
+            st.session_state.messages = []
+            st.rerun()
 
 else:
     st.warning("Please log in or register to access the assistant.")

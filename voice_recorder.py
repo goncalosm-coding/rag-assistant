@@ -19,10 +19,12 @@ def record_audio(fs=44100, silence_threshold=0.01, silence_duration=1):
         while True:
             # Record in chunks (buffer size)
             chunk = stream.read(int(fs * 0.2))  # 200ms chunks
-            audio_data.append(chunk)
+            audio_chunk = chunk[0]  # Extract audio data
+
+            audio_data.append(audio_chunk)
 
             # Check for silence
-            if is_silence(chunk, silence_threshold):
+            if is_silence(audio_chunk, silence_threshold):
                 silence_count += 0.2
             else:
                 silence_count = 0  # Reset silence counter when sound is detected

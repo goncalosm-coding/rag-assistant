@@ -1,95 +1,47 @@
 import sounddevice as sd
-import numpy as np
-import whisper
 import scipy.io.wavfile as wav
+import whisper
+import numpy as np
+import tempfile
 
-import pyaudio
-import wave
-import webrtcvad
-import time
+# Function to detect silence
+def is_silence(data, threshold=0.01):
+    return np.abs(data).mean() < threshold
 
-def record_audio():
-    sample_rate = 16000  # Sample rate for webrtcvad
-    frame_duration = 30   # Frame duration in ms
-    frame_size = int(sample_rate * frame_duration / 1000)  # Frame size in samples
+def record_audio(fs=44100, silence_threshold=0.01, silence_duration=1):
+    silence_count = 0
+    audio_data = []
 
-    # Initialize VAD
-    vad = webrtcvad.Vad(2)  # Set aggressiveness mode (1 is low, 3 is high)
+    print("Recording... Press 'Stop' to finish.")
 
-    # Initialize PyAudio
-    audio = pyaudio.PyAudio()
-
-    # Open the audio stream
-    stream = audio.open(format=pyaudio.paInt16,
-                        channels=1,  # Mono audio
-                        rate=sample_rate,
-                        input=True,
-                        frames_per_buffer=frame_size)
-
-    frames = []
-    is_recording = False
-    silence_counter = 0
-    silence_threshold = 5  # Number of consecutive silent frames to stop recording
-
-    print("Recording... Speak now!")
-
-    # Allow a short delay before starting the speech detection
-    time.sleep(0.5)  # Wait for 1 second before checking for speech
-
-    try:
+    # Open an input stream and listen for silence
+    with sd.InputStream(samplerate=fs, channels=1) as stream:
         while True:
-            data = stream.read(frame_size, exception_on_overflow=False)
+            # Record in chunks (buffer size)
+            chunk = stream.read(int(fs * 0.2))  # 200ms chunks
+            audio_data.append(chunk)
 
-            # Use VAD to detect speech
-            if vad.is_speech(data, sample_rate):
-                if not is_recording:
-                    print("Speech detected, starting recording...")
-                    is_recording = True
-                frames.append(data)
-                silence_counter = 0  # Reset silence counter when speech is detected
+            # Check for silence
+            if is_silence(chunk, silence_threshold):
+                silence_count += 0.2
             else:
-                if is_recording:
-                    silence_counter += 1  # Increment silence counter
-                    print("Silence detected...")
+                silence_count = 0  # Reset silence counter when sound is detected
 
-                    # Only stop recording after enough silence frames
-                    if silence_counter >= silence_threshold:
-                        print("Silence confirmed, stopping recording...")
-                        break
+            # Stop after a certain duration of silence
+            if silence_count > silence_duration:
+                break
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    # Convert the list to a numpy array
+    audio_data = np.concatenate(audio_data)
 
-    # Close the stream and terminate PyAudio
-    stream.stop_stream()
-    stream.close()
-    audio.terminate()
+    # Save the audio data to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_wav_file:
+        wav.write(tmp_wav_file.name, fs, audio_data)
+        print(f"Recording saved: {tmp_wav_file.name}")
+        return tmp_wav_file.name  # Return path to temp audio file
 
-    if frames:
-        # Save the recorded frames as a WAV file
-        output_filename = "output.wav"
-        with wave.open(output_filename, 'wb') as wf:
-            wf.setnchannels(1)  # Mono
-            wf.setsampwidth(2)  # 2 bytes for int16
-            wf.setframerate(sample_rate)
-            wf.writeframes(b''.join(frames))  # Write the audio data
-
-        print(f"Recording saved as {output_filename}")
-        return output_filename
-    else:
-        print("No audio recorded.")
-        return None  # Return None if no audio is recorded
-
-# Example usage
-if __name__ == "__main__":
-    output_file = record_audio()  # Call the function to test
-    if output_file:
-        print(f"Audio recorded and saved as: {output_file}")
-    else:
-        print("Recording was not successful.")
-        
-# Function to convert speech to text using Whisper
+# Function to transcribe audio to text using Whisper
 def speech_to_text_whisper(audio_file):
-    model = whisper.load_model("base")  # Load the Whisper model
-    result = model.transcribe(audio_file)  # Transcribe the audio file
+    model = whisper.load_model("base")  # Load the whisper model (use a smaller model if needed)
+    result = model.transcribe(audio_file)
     return result['text']  # Return the transcribed text

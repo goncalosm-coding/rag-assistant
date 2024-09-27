@@ -183,10 +183,9 @@ if st.session_state.logged_in:
                     st.warning(f"{recipient} has opted out of receiving forwarded messages.")
 
         # Audio recording option
-        if st.button("Record Audio Query"):
-            audio_file = record_audio() 
+        if st.button("Record Audio"):
+            audio_file = record_audio()
             transcribed_text = speech_to_text_whisper(audio_file)
-
             st.session_state.messages.append({"role": "user", "content": transcribed_text})
 
             response = query_rag(transcribed_text)

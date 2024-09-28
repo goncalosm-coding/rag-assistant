@@ -2,7 +2,6 @@ import argparse
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from embedding_function import get_embedding_function
-from dotenv import load_dotenv
 from openai import OpenAI
 
 CHROMA_PATH = "chroma"

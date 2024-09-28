@@ -142,7 +142,7 @@ posthog==3.6.6
 pox==0.3.4
 ppft==1.7.6.8
 proto-plus==1.24.0
-protobuf==5.28.2
+protobuf
 psutil==6.0.0
 pyarrow==17.0.0
 pyasn1==0.6.1

@@ -2,13 +2,14 @@ import streamlit as st
 import json
 import os
 from query_data import query_rag
-from dotenv import load_dotenv
 from voice_recorder import record_audio, speech_to_text_whisper
 import hashlib
 from cryptography.fernet import Fernet
 import openai
+from populate_database import main as populate_database_main
 
-load_dotenv()
+# Run the populate_database.py script before the rest of the app
+populate_database_main()
 
 
 def check_openai_api_key(api_key):

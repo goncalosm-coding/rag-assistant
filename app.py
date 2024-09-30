@@ -2,14 +2,13 @@ import streamlit as st
 import json
 import os
 from query_data import query_rag
+from dotenv import load_dotenv
 from voice_recorder import record_audio, speech_to_text_whisper
 import hashlib
 from cryptography.fernet import Fernet
 import openai
-from populate_database import main as populate_database_main
 
-# Run the populate_database.py script before the rest of the app
-populate_database_main()
+load_dotenv()
 
 
 def check_openai_api_key(api_key):
@@ -242,6 +241,20 @@ if st.session_state.logged_in:
             st.success("Chat history cleared!")
             st.rerun()
 
+        # Audio recording option
+        if st.button("Record Audio Prompt"):
+            audio_file = record_audio()
+            transcribed_text = speech_to_text_whisper(audio_file)
+            st.session_state.messages.append({"role": "user", "content": transcribed_text})
+
+            response = query_rag(transcribed_text, decrypt_api_key(users[username]["api_key"]))  # Decrypt API key for usage
+            st.session_state.messages.append({"role": "assistant", "content": response})
+
+            users[username]["messages"] = st.session_state.messages
+            save_user_data(users, users_file)
+
+            st.rerun()
+
         # Ensure logout button stays at the bottom
         st.markdown("---")  # Another separator line
         if st.button("Logout"):
@@ -252,8 +265,3 @@ if st.session_state.logged_in:
             st.session_state.messages = []
             st.success("Logged out successfully!")
             st.rerun()  # Reload to reset the session
-
-# Set the app to bind to a specific port for deployment
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8501))  # Default to 8501 if no port is set
-    st.run(port=port)

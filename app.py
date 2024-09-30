@@ -242,20 +242,6 @@ if st.session_state.logged_in:
             st.success("Chat history cleared!")
             st.rerun()
 
-        # Audio recording option
-        if st.button("Record Audio Prompt"):
-            audio_file = record_audio()
-            transcribed_text = speech_to_text_whisper(audio_file)
-            st.session_state.messages.append({"role": "user", "content": transcribed_text})
-
-            response = query_rag(transcribed_text, decrypt_api_key(users[username]["api_key"]))  # Decrypt API key for usage
-            st.session_state.messages.append({"role": "assistant", "content": response})
-
-            users[username]["messages"] = st.session_state.messages
-            save_user_data(users, users_file)
-
-            st.rerun()
-
         # Ensure logout button stays at the bottom
         st.markdown("---")  # Another separator line
         if st.button("Logout"):

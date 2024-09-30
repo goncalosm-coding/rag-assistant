@@ -11,3 +11,4 @@ whisper
 numpy
 sounddevice
 scipy
+protobuf==3.20.*

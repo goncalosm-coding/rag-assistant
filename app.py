@@ -266,3 +266,8 @@ if st.session_state.logged_in:
             st.session_state.messages = []
             st.success("Logged out successfully!")
             st.rerun()  # Reload to reset the session
+
+# Set the app to bind to a specific port for deployment
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8501))  # Default to 8501 if no port is set
+    st.run(port=port)
